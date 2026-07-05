@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>查询 - 鲍鱼数据分析</title>
+    <link href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style>
+        body { background: #f5f6fa; padding-top: 20px; }
+        .detail-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 30px; margin-top: 30px; }
+        .detail-card h3 { text-align: center; color: #337ab7; margin-bottom: 25px; }
+        .info-label { font-weight: bold; color: #555; }
+        .info-value { color: #333; }
+        .back-btn { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="back-btn">
+        <button class="btn btn-default" onclick="window.location.href='home.html'">&larr; 返回首页</button>
+    </div>
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-10">
+            <div class="detail-card" id="detailCard">
+                <h3><span class="glyphicon glyphicon-search"></span> 鲍鱼详情</h3>
+                <div id="detailContent"></div>
+            </div>
+        </div>
+        <div class="col-md-1"></div>
+    </div>
+</div>
+
+<script>
+var sexMap = { '-1': '幼年', '0': '雄性', '1': '雌性' };
+
+function getQueryParam(name) {
+    var m = window.location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
+    return m ? decodeURIComponent(m[1]) : null;
+}
+
+var id = parseInt(getQueryParam('id')) || 1;
+
+$.getJSON('/api/abalone/' + id, function(item) {
+    var fields = [
+        { label: '编号', value: item.id },
+        { label: '性别', value: sexMap[item.sex] || item.sex },
+        { label: '长度 (mm)', value: item.length },
+        { label: '直径 (mm)', value: item.diameter },
+        { label: '高度 (mm)', value: item.height },
+        { label: '整体重量 (g)', value: item.whole_weight },
+        { label: '去壳重量 (g)', value: item.shucked_weight },
+        { label: '内脏重量 (g)', value: item.viscera_weight },
+        { label: '壳重量 (g)', value: item.shell_weight },
+        { label: '年轮数', value: item.rings },
+        { label: '估计年龄 (年)', value: (item.rings + 1.5).toFixed(1) }
+    ];
+    var html = '<table class="table table-bordered table-striped">';
+    fields.forEach(function(f) {
+        html += '<tr><td class="info-label" style="width:40%;">' + f.label + '</td><td class="info-value">' + f.value + '</td></tr>';
+    });
+    html += '</table>';
+    $('#detailContent').html(html);
+}).fail(function() {
+    $('#detailContent').html('<p class="text-center" style="color:red;font-size:18px;">未找到该记录</p>');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+127.0.0.1 - - [06/Jul/2026 01:15:28] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Jul/2026 01:16:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Jul/2026 01:16:07] "GET /login.html HTTP/1.1" 200 -
+127.0.0.1 - - [06/Jul/2026 01:16:07] "GET /static/img/lunbo1.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [06/Jul/2026 01:16:07] "GET /static/img/lunbo2.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [06/Jul/2026 01:16:07] "GET /static/img/lunbo3.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [06/Jul/2026 01:16:08] "POST /api/register HTTP/1.1" 409 -
+127.0.0.1 - - [06/Jul/2026 01:16:25] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Jul/2026 01:16:25] "GET /login.html HTTP/1.1" 200 -
+127.0.0.1 - - [06/Jul/2026 01:16:25] "GET /static/img/lunbo1.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [06/Jul/2026 01:16:25] "GET /static/img/lunbo2.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [06/Jul/2026 01:16:25] "GET /static/img/lunbo3.jpg HTTP/1.1" 200 -

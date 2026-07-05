@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>模型训练 - 鲍鱼数据分析</title>
+    <link href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.js"></script>
+    <style>
+        body { background: #f5f6fa; padding-top: 20px; }
+        .train-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 25px; margin-top: 20px; }
+        .train-card h3 { text-align: center; color: #337ab7; margin-bottom: 20px; }
+        .metric-box { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 6px; margin-bottom: 10px; }
+        .metric-box .num { font-size: 28px; font-weight: bold; color: #337ab7; }
+        .metric-box .label-text { font-size: 14px; color: #777; }
+        .train-btn-wrapper { text-align: center; margin: 20px 0; }
+        .status-bar { margin-top: 15px; }
+        .progress-custom { height: 30px; border-radius: 15px; }
+        .history-table th { background: #337ab7; color: #fff; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="#">鲍鱼数据分析</a>
+        </div>
+        <div>
+            <ul class="nav navbar-nav" style="font-size:18px;">
+                <li><a href="home.html">主页</a></li>
+                <li><a href="abalone.html">查询</a></li>
+                <li><a href="pred.html">预测</a></li>
+                <li class="active"><a href="train.html">训练</a></li>
+                <li><a href="dashboard.html">大屏</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="login.html">退出</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-5">
+            <div class="train-card">
+                <h3><span class="glyphicon glyphicon-cog"></span> 训练配置</h3>
+                <form id="trainForm">
+                    <div class="form-group">
+                        <label>选择模型</label>
+                        <select class="form-control" id="modelSelect">
+                            <option value="LR">线性回归 (LR)</option>
+                            <option value="DT-R">决策树回归 (DT-R)</option>
+                            <option value="RF-R" selected>随机森林回归 (RF-R)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>训练集比例</label>
+                        <select class="form-control" id="trainRatio">
+                            <option value="0.7">70% 训练 / 30% 测试</option>
+                            <option value="0.8" selected>80% 训练 / 20% 测试</option>
+                            <option value="0.9">90% 训练 / 10% 测试</option>
+                        </select>
+                    </div>
+                    <div class="train-btn-wrapper">
+                        <button type="submit" class="btn btn-success btn-lg" id="trainBtn">
+                            <span class="glyphicon glyphicon-play"></span> 开始训练
+                        </button>
+                    </div>
+                </form>
+                <div class="status-bar" id="statusBar" style="display:none;">
+                    <div class="progress progress-custom">
+                        <div class="progress-bar progress-bar-success progress-bar-striped active" id="progressBar" style="width:0%;">0%</div>
+                    </div>
+                    <p class="text-center" id="statusText">准备就绪...</p>
+                </div>
+            </div>
+            <div class="train-card" id="metricsCard" style="display:none;">
+                <h3><span class="glyphicon glyphicon-dashboard"></span> 训练指标</h3>
+                <div class="row">
+                    <div class="col-md-4"><div class="metric-box"><p class="num" id="metricMAE">0</p><p class="label-text">MAE</p></div></div>
+                    <div class="col-md-4"><div class="metric-box"><p class="num" id="metricMSE">0</p><p class="label-text">MSE</p></div></div>
+                    <div class="col-md-4"><div class="metric-box"><p class="num" id="metricRMSE">0</p><p class="label-text">RMSE</p></div></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6"><div class="metric-box"><p class="num" id="metricR2">0</p><p class="label-text">R²</p></div></div>
+                    <div class="col-md-6"><div class="metric-box"><p class="num" id="metricTime">0s</p><p class="label-text">训练耗时</p></div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="train-card">
+                <h3><span class="glyphicon glyphicon-list-alt"></span> 训练历史</h3>
+                <table class="table table-bordered history-table">
+                    <thead><tr><th>模型</th><th>MAE</th><th>MSE</th><th>RMSE</th><th>R²</th><th>耗时</th></tr></thead>
+                    <tbody id="historyBody">
+                        <tr><td colspan="6" class="text-center" style="color:#999;">暂无训练记录</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="train-card">
+                <div id="trainChart" style="height:300px;width:100%;"></div>
+            </div>
+        </div>
+        <div class="col-md-1"></div>
+    </div>
+</div>
+
+<script>
+var modelNames = { 'LR': '线性回归', 'DT-R': '决策树回归', 'RF-R': '随机森林回归' };
+var historyData = [];
+var chart = echarts.init(document.getElementById('trainChart'));
+chart.setOption({
+    title: { text: '模型指标对比', left: 'center', textStyle: { fontSize: 14 } },
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['MAE', 'R²'], bottom: 0 },
+    xAxis: { type: 'category', data: [] },
+    yAxis: [{ type: 'value', name: 'MAE' }, { type: 'value', name: 'R²', min: 0, max: 1 }],
+    series: [
+        { name: 'MAE', type: 'bar', data: [], itemStyle: { color: '#d9534f' } },
+        { name: 'R²', type: 'line', yAxisIndex: 1, data: [], itemStyle: { color: '#5bc0de' }, lineStyle: { width: 3 } }
+    ]
+});
+
+$('#trainForm').submit(function(e) {
+    e.preventDefault();
+    var model = $('#modelSelect').val();
+    var ratio = parseFloat($('#trainRatio').val());
+
+    $('#trainBtn').prop('disabled', true);
+    $('#statusBar').show();
+    $('#metricsCard').hide();
+
+    var progress = 0;
+    var interval = setInterval(function() {
+        progress += 5;
+        if (progress > 100) progress = 100;
+        $('#progressBar').css('width', progress + '%').text(progress + '%');
+        $('#statusText').text('正在训练 ' + modelNames[model] + '... ' + progress + '%');
+
+        if (progress >= 100) {
+            clearInterval(interval);
+            $.ajax({
+                url: '/api/train',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ model: model, ratio: ratio }),
+                success: function(res) {
+                    $('#trainBtn').prop('disabled', false);
+                    $('#statusText').text('训练完成！');
+                    $('#metricMAE').text(res.mae);
+                    $('#metricMSE').text(res.mse);
+                    $('#metricRMSE').text(res.rmse);
+                    $('#metricR2').text(res.r2);
+                    $('#metricTime').text(res.trainTime + 's');
+                    $('#metricsCard').show();
+
+                    historyData.push({ model: res.modelName, MAE: res.mae, MSE: res.mse, RMSE: res.rmse, R2: res.r2, Time: res.trainTime });
+                    updateHistory();
+                    updateChart();
+                },
+                error: function() {
+                    $('#trainBtn').prop('disabled', false);
+                    $('#statusText').text('训练失败，请重试');
+                }
+            });
+        }
+    }, 200);
+});
+
+function updateHistory() {
+    if (historyData.length === 0) {
+        $('#historyBody').html('<tr><td colspan="6" class="text-center" style="color:#999;">暂无训练记录</td></tr>');
+        return;
+    }
+    var html = '';
+    historyData.forEach(function(r) {
+        html += '<tr><td>' + r.model + '</td><td>' + r.MAE + '</td><td>' + r.MSE + '</td><td>' + r.RMSE + '</td><td>' + r.R2 + '</td><td>' + r.Time + 's</td></tr>';
+    });
+    $('#historyBody').html(html);
+}
+
+function updateChart() {
+    var names = historyData.map(function(r) { return r.model; });
+    var maes = historyData.map(function(r) { return parseFloat(r.MAE); });
+    var r2s = historyData.map(function(r) { return parseFloat(r.R2); });
+    chart.setOption({
+        xAxis: { data: names },
+        series: [
+            { name: 'MAE', data: maes },
+            { name: 'R²', data: r2s }
+        ]
+    });
+}
+
+$(function() {
+    // Load initial history from server
+    $.getJSON('/api/train/history', function(data) {
+        if (data.length > 0) {
+            historyData = data.map(function(r) {
+                return { model: modelNames[r.model] || r.model, MAE: r.mae, MSE: r.mse, RMSE: r.rmse, R2: r.r2, Time: r.train_time };
+            });
+            updateHistory();
+            updateChart();
+        }
+    });
+});
+</script>
+</body>
+</html>

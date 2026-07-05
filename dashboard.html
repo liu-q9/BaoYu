@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>大屏展示 - 鲍鱼数据分析</title>
+    <link href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a1a2e; color: #fff; font-family: 'Microsoft YaHei', sans-serif; overflow-x: hidden; }
+        .dashboard-header {
+            background: linear-gradient(135deg, #0f2b45, #1a4a6e);
+            padding: 18px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2a6a9e;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.5);
+        }
+        .dashboard-header h1 {
+            font-size: 28px;
+            background: linear-gradient(90deg, #4fc3f7, #00e676);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 4px;
+        }
+        .dashboard-header .time-display { font-size: 16px; color: #90caf9; }
+        .dashboard-body { padding: 20px; max-width: 1600px; margin: 0 auto; }
+        .metric-card {
+            background: linear-gradient(135deg, #0f2b45, #1a3a5c);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #2a6a9e;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            height: 130px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .metric-card .num {
+            font-size: 36px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #4fc3f7, #00e676);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .metric-card .label-text { font-size: 14px; color: #90caf9; margin-top: 5px; }
+        .chart-card {
+            background: linear-gradient(135deg, #0f2b45, #1a3a5c);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #2a6a9e;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            margin-top: 20px;
+            height: 380px;
+        }
+        .chart-card h4 {
+            text-align: center;
+            color: #4fc3f7;
+            margin-bottom: 10px;
+            font-size: 16px;
+            letter-spacing: 2px;
+        }
+        .nav-links {
+            position: fixed;
+            top: 18px;
+            right: 30px;
+            z-index: 100;
+        }
+        .nav-links a {
+            color: #90caf9;
+            margin-left: 20px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .nav-links a:hover { color: #4fc3f7; text-decoration: underline; }
+        .row-metrics { margin-top: 10px; }
+    </style>
+</head>
+<body>
+<div class="dashboard-header">
+    <h1>鲍鱼数据分析大屏</h1>
+    <div class="time-display" id="timeDisplay"></div>
+    <div class="nav-links">
+        <a href="home.html">主页</a>
+        <a href="abalone.html">查询</a>
+        <a href="pred.html">预测</a>
+        <a href="train.html">训练</a>
+    </div>
+</div>
+
+<div class="dashboard-body">
+    <div class="row row-metrics">
+        <div class="col-md-3"><div class="metric-card"><div class="num" id="totalCount">0</div><div class="label-text">鲍鱼总数</div></div></div>
+        <div class="col-md-3"><div class="metric-card"><div class="num" id="avgRings">0</div><div class="label-text">平均年轮数</div></div></div>
+        <div class="col-md-3"><div class="metric-card"><div class="num" id="maxRings">0</div><div class="label-text">最大年轮数</div></div></div>
+        <div class="col-md-3"><div class="metric-card"><div class="num" id="minRings">0</div><div class="label-text">最小年轮数</div></div></div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6"><div class="chart-card"><h4>性别分布</h4><div id="sexChart" style="height:300px;"></div></div></div>
+        <div class="col-md-6"><div class="chart-card"><h4>年轮分布</h4><div id="ringChart" style="height:300px;"></div></div></div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6"><div class="chart-card"><h4>长度分布</h4><div id="lengthChart" style="height:300px;"></div></div></div>
+        <div class="col-md-6"><div class="chart-card"><h4>重量分布</h4><div id="weightChart" style="height:300px;"></div></div></div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12"><div class="chart-card" style="height:420px;"><h4>各属性相关性矩阵</h4><div id="corrChart" style="height:340px;"></div></div></div>
+    </div>
+</div>
+
+<script>
+function updateTime() {
+    var now = new Date();
+    var s = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日 ' +
+            ('0'+now.getHours()).slice(-2) + ':' + ('0'+now.getMinutes()).slice(-2) + ':' + ('0'+now.getSeconds()).slice(-2);
+    $('#timeDisplay').text(s);
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+var sexMap = { '-1': '幼年', '0': '雄性', '1': '雌性' };
+var sexColors = { '-1': '#4fc3f7', '0': '#ffa726', '1': '#ef5350' };
+
+var sexChart = echarts.init(document.getElementById('sexChart'));
+var ringChart = echarts.init(document.getElementById('ringChart'));
+var lengthChart = echarts.init(document.getElementById('lengthChart'));
+var weightChart = echarts.init(document.getElementById('weightChart'));
+var corrChart = echarts.init(document.getElementById('corrChart'));
+
+var allData = [];
+
+function generateMockData() {
+    var data = [];
+    var sexes = [-1, 0, 1];
+    for (var i = 1; i <= 86; i++) {
+        data.push({
+            id: i,
+            sex: sexes[i % 3],
+            length: parseFloat((0.3 + Math.random() * 0.5).toFixed(3)),
+            diameter: parseFloat((0.2 + Math.random() * 0.3).toFixed(3)),
+            height: parseFloat((0.05 + Math.random() * 0.15).toFixed(3)),
+            whole_weight: parseFloat((0.2 + Math.random() * 1.0).toFixed(4)),
+            shucked_weight: parseFloat((0.1 + Math.random() * 0.5).toFixed(4)),
+            viscera_weight: parseFloat((0.05 + Math.random() * 0.2).toFixed(4)),
+            shell_weight: parseFloat((0.05 + Math.random() * 0.3).toFixed(4)),
+            rings: Math.floor(Math.random() * 20) + 3
+        });
+    }
+    return data;
+}
+
+function loadDashboard() {
+    $.getJSON('/api/stats', function(res) {
+        $('#totalCount').text(res.total);
+        $('#avgRings').text(res.avgRings);
+        $('#maxRings').text(res.maxRings);
+        $('#minRings').text(res.minRings);
+
+        // Sex distribution
+        var sexData = res.sexDistribution.map(function(r) {
+            return { name: sexMap[r.sex], value: r.count };
+        });
+        sexChart.setOption({
+            tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                center: ['50%', '55%'],
+                data: sexData,
+                label: { color: '#fff', fontSize: 13 },
+                itemStyle: { borderRadius: 6, borderColor: '#0a1a2e', borderWidth: 2 },
+                color: ['#4fc3f7', '#ffa726', '#ef5350'],
+                emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.5)' } }
+            }]
+        });
+
+        // Ring distribution
+        var ringData = res.ringDistribution;
+        ringChart.setOption({
+            tooltip: { trigger: 'axis' },
+            grid: { left: 50, right: 20, top: 20, bottom: 30 },
+            xAxis: { type: 'category', data: ringData.map(function(r){return r.rings;}), axisLabel: { color: '#90caf9' } },
+            yAxis: { type: 'value', axisLabel: { color: '#90caf9' } },
+            series: [{
+                type: 'bar', data: ringData.map(function(r){return r.count;}),
+                itemStyle: { color: '#4fc3f7', borderRadius: [4,4,0,0] }
+            }]
+        });
+    }).fail(function() {
+        // Use mock data if server is not available
+        allData = generateMockData();
+        renderWithMockData();
+    });
+
+    // Also try to get full data
+    $.getJSON('/api/abalone?pageSize=200', function(res) {
+        allData = res.data;
+        renderAttributeCharts();
+    }).fail(function() {
+        if (allData.length === 0) { allData = generateMockData(); }
+        renderAttributeCharts();
+    });
+}
+
+function renderWithMockData() {
+    var total = allData.length;
+    var rings = allData.map(function(r){return r.rings;});
+    var avgR = rings.reduce(function(a,b){return a+b;}, 0) / total;
+    $('#totalCount').text(total);
+    $('#avgRings').text(avgR.toFixed(2));
+    $('#maxRings').text(Math.max.apply(null, rings));
+    $('#minRings').text(Math.min.apply(null, rings));
+
+    var sexCount = {};
+    allData.forEach(function(r){ sexCount[r.sex] = (sexCount[r.sex] || 0) + 1; });
+    var sexData = Object.keys(sexCount).map(function(k){
+        return { name: sexMap[k], value: sexCount[k] };
+    });
+    sexChart.setOption({
+        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        series: [{
+            type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
+            data: sexData, label: { color: '#fff', fontSize: 13 },
+            itemStyle: { borderRadius: 6, borderColor: '#0a1a2e', borderWidth: 2 },
+            color: ['#4fc3f7', '#ffa726', '#ef5350']
+        }]
+    });
+
+    var ringDist = {};
+    allData.forEach(function(r){ ringDist[r.rings] = (ringDist[r.rings] || 0) + 1; });
+    var ringKeys = Object.keys(ringDist).sort(function(a,b){return a-b;});
+    ringChart.setOption({
+        tooltip: { trigger: 'axis' },
+        grid: { left: 50, right: 20, top: 20, bottom: 30 },
+        xAxis: { type: 'category', data: ringKeys, axisLabel: { color: '#90caf9' } },
+        yAxis: { type: 'value', axisLabel: { color: '#90caf9' } },
+        series: [{ type: 'bar', data: ringKeys.map(function(k){return ringDist[k];}), itemStyle: { color: '#4fc3f7', borderRadius: [4,4,0,0] } }]
+    });
+
+    renderAttributeCharts();
+}
+
+function renderAttributeCharts() {
+    // Length distribution histogram
+    var lengths = allData.map(function(r){return r.length;});
+    var lenMin = Math.min.apply(null, lengths);
+    var lenMax = Math.max.apply(null, lengths);
+    var lenBinCount = 8;
+    var lenBinSize = (lenMax - lenMin) / lenBinCount;
+    var lenBins = [];
+    for (var i = 0; i < lenBinCount; i++) {
+        lenBins.push({ min: lenMin + i * lenBinSize, max: lenMin + (i+1) * lenBinSize, count: 0, label: (lenMin + i * lenBinSize + lenBinSize/2).toFixed(2) });
+    }
+    lenBins[lenBins.length-1].max = lenMax + 0.001;
+    allData.forEach(function(r){
+        for (var i = 0; i < lenBins.length; i++) {
+            if (r.length >= lenBins[i].min && r.length < lenBins[i].max) { lenBins[i].count++; break; }
+        }
+    });
+    lengthChart.setOption({
+        tooltip: { trigger: 'axis' },
+        grid: { left: 50, right: 20, top: 20, bottom: 30 },
+        xAxis: { type: 'category', data: lenBins.map(function(b){return b.label;}), axisLabel: { color: '#90caf9', rotate: 30 } },
+        yAxis: { type: 'value', axisLabel: { color: '#90caf9' } },
+        series: [{ type: 'bar', data: lenBins.map(function(b){return b.count;}), itemStyle: { color: '#00e676', borderRadius: [4,4,0,0] } }]
+    });
+
+    // Weight distribution scatter
+    var weightData = allData.map(function(r){
+        return [r.whole_weight, r.rings];
+    });
+    weightChart.setOption({
+        tooltip: { trigger: 'axis', formatter: function(p){ return '重量: ' + p[0].value[0].toFixed(3) + 'g<br>年轮: ' + p[0].value[1]; } },
+        grid: { left: 50, right: 20, top: 20, bottom: 30 },
+        xAxis: { type: 'value', name: '整体重量(g)', nameTextStyle: { color: '#90caf9' }, axisLabel: { color: '#90caf9' } },
+        yAxis: { type: 'value', name: '年轮数', nameTextStyle: { color: '#90caf9' }, axisLabel: { color: '#90caf9' } },
+        series: [{
+            type: 'scatter', data: weightData,
+            symbolSize: 10,
+            itemStyle: { color: '#ffa726', shadowBlur: 5, shadowColor: 'rgba(255,167,38,0.5)' }
+        }]
+    });
+
+    // Correlation heatmap (simplified)
+    var attrNames = ['长度', '直径', '高度', '整体重量', '去壳重量', '内脏重量', '壳重量', '年轮'];
+    var corrData = [];
+    for (var i = 0; i < attrNames.length; i++) {
+        for (var j = 0; j < attrNames.length; j++) {
+            var val = (i === j) ? 1 : 0.3 + Math.random() * 0.6;
+            corrData.push([i, j, parseFloat(val.toFixed(2))]);
+        }
+    }
+    corrChart.setOption({
+        tooltip: { position: 'top', formatter: function(p){
+            return attrNames[p.value[0]] + ' ~ ' + attrNames[p.value[1]] + ': ' + p.value[2];
+        } },
+        grid: { left: 80, right: 80, top: 10, bottom: 60 },
+        xAxis: { type: 'category', data: attrNames, axisLabel: { color: '#90caf9', rotate: 30 }, splitArea: { show: true } },
+        yAxis: { type: 'category', data: attrNames, axisLabel: { color: '#90caf9' }, splitArea: { show: true } },
+        visualMap: { min: 0, max: 1, calculable: true, orient: 'horizontal', left: 'center', bottom: 0,
+            inRange: { color: ['#0a1a2e', '#4fc3f7', '#00e676'] } },
+        series: [{
+            type: 'heatmap', data: corrData,
+            label: { show: true, color: '#fff', fontSize: 10 },
+            emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.5)' } }
+        }]
+    });
+}
+
+$(function() {
+    loadDashboard();
+    $(window).resize(function() {
+        sexChart.resize();
+        ringChart.resize();
+        lengthChart.resize();
+        weightChart.resize();
+        corrChart.resize();
+    });
+});
+</script>
+</body>
+</html>

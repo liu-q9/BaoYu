@@ -1,0 +1,6 @@
+# 鲍鱼数据分析系统 - Python依赖
+# 本系统使用Python标准库，无需额外安装包
+# 如果需要使用PySpark MLlib，请安装：
+# pyspark==3.5.0
+# 如果需要使用MySQL，请安装：
+# mysql-connector-python==8.3.0

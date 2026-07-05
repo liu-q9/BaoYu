@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>登录 - 鲍鱼数据分析</title>
+    <link href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style>
+        body { background: #f0f2f5; }
+        .login-wrapper { margin-top: 80px; }
+        .login-panel { background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); padding: 30px; }
+        .carousel-inner img { height: 360px; object-fit: cover; border-radius: 6px; }
+        .footer { margin-top: 60px; padding: 20px 0; text-align: center; color: #999; }
+    </style>
+</head>
+<body>
+<div class="container login-wrapper">
+    <div class="row">
+        <div class="col-md-2"></div>
+        <div class="col-md-8">
+            <div class="row login-panel">
+                <div class="col-md-7">
+                    <div id="myCarousel" class="carousel slide" data-ride="carousel">
+                        <ol class="carousel-indicators">
+                            <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+                            <li data-target="#myCarousel" data-slide-to="1"></li>
+                            <li data-target="#myCarousel" data-slide-to="2"></li>
+                        </ol>
+                        <div class="carousel-inner">
+                            <div class="item active">
+                                <img src="static/img/lunbo1.jpg" alt="鲍鱼1">
+                                <div class="carousel-caption"><h4>鲍鱼数据分析平台</h4></div>
+                            </div>
+                            <div class="item">
+                                <img src="static/img/lunbo2.jpg" alt="鲍鱼2">
+                                <div class="carousel-caption"><h4>智能预测鲍鱼年龄</h4></div>
+                            </div>
+                            <div class="item">
+                                <img src="static/img/lunbo3.jpg" alt="鲍鱼3">
+                                <div class="carousel-caption"><h4>数据驱动决策</h4></div>
+                            </div>
+                        </div>
+                        <a class="left carousel-control" href="#myCarousel" data-slide="prev">
+                            <span class="glyphicon glyphicon-chevron-left"></span>
+                        </a>
+                        <a class="right carousel-control" href="#myCarousel" data-slide="next">
+                            <span class="glyphicon glyphicon-chevron-right"></span>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <h3 style="margin-top:0;margin-bottom:30px;text-align:center;color:#337ab7;">用户登录</h3>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="username" placeholder="用户名" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="password" class="form-control" id="password" placeholder="密码" required>
+                        </div>
+                        <div class="checkbox">
+                            <label><input type="checkbox"> 记住登录状态</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg btn-block">登录</button>
+                    </form>
+                    <p class="text-center" style="margin-top:15px;">
+                        <a href="#" data-toggle="modal" data-target="#registerModal">没有账号？立即注册</a>
+                    </p>
+                    <div id="loginNotice" class="text-center" style="color:red;font-weight:bold;margin-top:10px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2"></div>
+    </div>
+</div>
+<div class="footer">
+    <p><strong>&copy; 2024 上海第二工业大学</strong></p>
+</div>
+
+<div class="modal fade" id="registerModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">用户注册</h4>
+            </div>
+            <div class="modal-body">
+                <form id="registerForm">
+                    <h4>用户名</h4>
+                    <input class="form-control" name="regUsername" id="regUsername" required>
+                    <h4>密码</h4>
+                    <input class="form-control" name="regPassword" id="regPassword" type="password" required>
+                    <h4>姓名</h4>
+                    <input class="form-control" name="regName" id="regName" required>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="registerBtn">注册</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$('#loginForm').submit(function(e) {
+    e.preventDefault();
+    var name = $('#username').val();
+    var pwd = $('#password').val();
+    $.ajax({
+        url: '/api/login',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ username: name, password: pwd }),
+        success: function(res) {
+            localStorage.setItem('username', res.username);
+            localStorage.setItem('name', res.name);
+            window.location.href = 'home.html';
+        },
+        error: function(xhr) {
+            var msg = '用户名或密码错误';
+            try { msg = JSON.parse(xhr.responseText).message; } catch(e) {}
+            $('#loginNotice').text(msg);
+        }
+    });
+});
+
+$('#registerBtn').click(function() {
+    var u = $('#regUsername').val();
+    var p = $('#regPassword').val();
+    var n = $('#regName').val();
+    if (!u || !p || !n) { alert('请填写完整信息'); return; }
+    $.ajax({
+        url: '/api/register',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ username: u, password: p, name: n }),
+        success: function() {
+            alert('注册成功，请登录');
+            $('#registerModal').modal('hide');
+            $('#registerForm')[0].reset();
+        },
+        error: function(xhr) {
+            var msg = '注册失败';
+            try { msg = JSON.parse(xhr.responseText).message; } catch(e) {}
+            alert(msg);
+        }
+    });
+});
+
+$(function() {
+    // Auto-create default admin account on first visit
+    $.ajax({
+        url: '/api/register',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ username: 'admin', password: '123456', name: '管理员' }),
+        success: function() { console.log('默认管理员账号已创建'); }
+    });
+});
+</script>
+</body>
+</html>
