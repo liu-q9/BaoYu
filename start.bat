@@ -23,7 +23,7 @@ if %errorlevel% equ 0 (
     goto OPEN_BROWSER
 )
 
-start "鲍鱼数据系统" cmd /c python server.py
+start "鲍鱼数据系统" cmd /c python local_server.py
 
 echo 等待服务器启动...
 for /l %%i in (1,1,10) do (
